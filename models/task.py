@@ -107,7 +107,7 @@ class Task:
             priority=row['priority'],
             is_urgent=bool(row['is_urgent']),
             created_at=row['created_at'],
-            updated_at=row['updated_at'] if 'updated_at' in row.keys() else None,
+            updated_at=row.get('updated_at'),
             user_id=row['user_id']
         )
     
