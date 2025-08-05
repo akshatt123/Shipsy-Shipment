@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Tasks - Task Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-list"></i> My Tasks</h2>
+    <a href="{{ url_for('tasks.create_task') }}" class="btn btn-success">
+        <i class="fas fa-plus"></i> New Task
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5><i class="fas fa-filter"></i> Filters</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">All Statuses</option>
+                    <option value="pending" {{ 'selected' if status_filter == 'pending' }}>Pending</option>
+                    <option value="in_progress" {{ 'selected' if status_filter == 'in_progress' }}>In Progress</option>
+                    <option value="completed" {{ 'selected' if status_filter == 'completed' }}>Completed</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="priority" class="form-label">Priority</label>
+                <select class="form-select" id="priority" name="priority">
+                    <option value="">All Priorities</option>
+                    <option value="low" {{ 'selected' if priority_filter == 'low' }}>Low</option>
+                    <option value="medium" {{ 'selected' if priority_filter == 'medium' }}>Medium</option>
+                    <option value="high" {{ 'selected' if priority_filter == 'high' }}>High</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="urgent" class="form-label">Urgent Only</label>
+                <select class="form-select" id="urgent" name="urgent">
+                    <option value="">All Tasks</option>
+                    <option value="true" {{ 'selected' if urgent_filter == 'true' }}>Urgent Only</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+                <a href="{{ url_for('tasks.list_tasks') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tasks List -->
+{% if tasks %}
+    <div class="row">
+        {% for task in tasks %}
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">{{ task.title }}</h6>
+                    <div>
+                        {% if task.is_urgent %}
+                            <span class="badge bg-danger me-1">
+                                <i class="fas fa-exclamation"></i> Urgent
+                            </span>
+                        {% endif %}
+                        <span class="badge bg-{{ 'success' if task.status == 'completed' else 'warning' if task.status == 'in_progress' else 'secondary' }}">
+                            {{ task.status.replace('_', ' ').title() }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ task.description or 'No description' }}</p>
+                    <small class="text-muted">
+                        <i class="fas fa-flag"></i> Priority: {{ task.priority.title() }} |
+                        <i class="fas fa-calendar"></i> {{ task.created_at[:16] }}
+                    </small>
+                </div>
+                <div class="card-footer">
+                    <div class="btn-group w-100" role="group">
+                        <a href="{{ url_for('tasks.edit_task', task_id=task.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <form method="POST" action="{{ url_for('tasks.delete_task', task_id=task.id) }}" class="d-inline" 
+                              onsubmit="return confirm('Are you sure you want to delete this task?')">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('tasks.toggle_urgent', task_id=task.id) }}" class="d-inline">
+                            <button type="submit" class="btn btn-outline-warning btn-sm">
+                                <i class="fas fa-{{ 'exclamation' if not task.is_urgent else 'times' }}"></i> 
+                                {{ 'Mark Urgent' if not task.is_urgent else 'Remove Urgent' }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <nav aria-label="Task pagination">
+        <ul class="pagination justify-content-center">
+            {% if current_page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('tasks.list_tasks', page=current_page-1, status=status_filter, priority=priority_filter, urgent=urgent_filter) }}">Previous</a>
+                </li>
+            {% endif %}
+            
+            {% for page_num in range(1, total_pages + 1) %}
+                <li class="page-item {{ 'active' if page_num == current_page }}">
+                    <a class="page-link" href="{{ url_for('tasks.list_tasks', page=page_num, status=status_filter, priority=priority_filter, urgent=urgent_filter) }}">{{ page_num }}</a>
+                </li>
+            {% endfor %}
+            
+            {% if current_page < total_pages %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('tasks.list_tasks', page=current_page+1, status=status_filter, priority=priority_filter, urgent=urgent_filter) }}">Next</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+{% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+        <h4>No tasks found</h4>
+        <p class="text-muted">Create your first task to get started!</p>
+        <a href="{{ url_for('tasks.create_task') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create Task
+        </a>
+    </div>
+{% endif %}
+{% endblock %}

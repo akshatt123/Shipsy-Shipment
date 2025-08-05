@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Track Shipment - Shipment Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-search"></i> Track Shipment</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('shipments.track_shipment') }}">
+                    <div class="mb-3">
+                        <label for="tracking_number" class="form-label">Tracking Number</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="tracking_number" name="tracking_number" 
+                                   placeholder="Enter tracking number (e.g., SHP12345678)" required>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Track
+                            </button>
+                        </div>
+                        <div class="form-text">Enter the tracking number to view shipment details and status.</div>
+                    </div>
+                </form>
+                
+                {% if shipment %}
+                <hr>
+                <div class="card border-success">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-box"></i> Shipment Found: {{ shipment.tracking_number }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Status Timeline -->
+                        <div class="mb-4">
+                            <h6><i class="fas fa-route"></i> Shipping Status</h6>
+                            <div class="progress mb-2" style="height: 25px;">
+                                {% set status_progress = {
+                                    'pending': 10,
+                                    'picked_up': 25,
+                                    'in_transit': 50,
+                                    'out_for_delivery': 75,
+                                    'delivered': 100,
+                                    'returned': 0
+                                } %}
+                                <div class="progress-bar bg-{{ 'success' if shipment.status == 'delivered' else 'danger' if shipment.status == 'returned' else 'primary' }}" 
+                                     role="progressbar" style="width: {{ status_progress[shipment.status] }}%">
+                                    {{ shipment.status.replace('_', ' ').title() }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Shipment Details -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-user text-primary"></i> Sender</h6>
+                                <p class="mb-1"><strong>{{ shipment.sender_name }}</strong></p>
+                                <p class="text-muted small">{{ shipment.sender_address }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-user-check text-success"></i> Recipient</h6>
+                                <p class="mb-1"><strong>{{ shipment.recipient_name }}</strong></p>
+                                <p class="text-muted small">{{ shipment.recipient_address }}</p>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-box text-info"></i> Package Details</h6>
+                                <p><strong>Description:</strong> {{ shipment.package_description or 'No description' }}</p>
+                                <p><strong>Weight:</strong> {{ shipment.weight or 'N/A' }} kg</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-cog text-warning"></i> Shipping Details</h6>
+                                <p><strong>Priority:</strong> 
+                                    <span class="badge bg-{{ 'danger' if shipment.priority == 'urgent' else 'warning' if shipment.priority == 'priority' else 'secondary' }}">
+                                        {{ shipment.priority.title() }}
+                                    </span>
+                                </p>
+                                <p><strong>Service:</strong> 
+                                    {% if shipment.is_express %}
+                                        <span class="badge bg-warning"><i class="fas fa-bolt"></i> Express</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Standard</span>
+                                    {% endif %}
+                                </p>
+                                <p><strong>Cost:</strong> ${{ "%.2f"|format(shipment.shipping_cost) }}</p>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar"></i> Created: {{ shipment.created_at[:16] }}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock"></i> Last Updated: {{ shipment.updated_at[:16] if shipment.updated_at else shipment.created_at[:16] }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="mt-3 text-center">
+                    <a href="{{ url_for('shipments.list_shipments') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i> Back to Shipments
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

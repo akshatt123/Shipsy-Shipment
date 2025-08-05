@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Shipments - Shipment Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-boxes"></i> My Shipments</h2>
+    <div>
+        <a href="{{ url_for('shipments.track_shipment') }}" class="btn btn-info me-2">
+            <i class="fas fa-search"></i> Track Shipment
+        </a>
+        <a href="{{ url_for('shipments.create_shipment') }}" class="btn btn-success">
+            <i class="fas fa-plus"></i> New Shipment
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5><i class="fas fa-filter"></i> Filters</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">All Statuses</option>
+                    <option value="pending" {{ 'selected' if status_filter == 'pending' }}>Pending</option>
+                    <option value="picked_up" {{ 'selected' if status_filter == 'picked_up' }}>Picked Up</option>
+                    <option value="in_transit" {{ 'selected' if status_filter == 'in_transit' }}>In Transit</option>
+                    <option value="out_for_delivery" {{ 'selected' if status_filter == 'out_for_delivery' }}>Out for Delivery</option>
+                    <option value="delivered" {{ 'selected' if status_filter == 'delivered' }}>Delivered</option>
+                    <option value="returned" {{ 'selected' if status_filter == 'returned' }}>Returned</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="priority" class="form-label">Priority</label>
+                <select class="form-select" id="priority" name="priority">
+                    <option value="">All Priorities</option>
+                    <option value="standard" {{ 'selected' if priority_filter == 'standard' }}>Standard</option>
+                    <option value="priority" {{ 'selected' if priority_filter == 'priority' }}>Priority</option>
+                    <option value="urgent" {{ 'selected' if priority_filter == 'urgent' }}>Urgent</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="express" class="form-label">Express Only</label>
+                <select class="form-select" id="express" name="express">
+                    <option value="">All Shipments</option>
+                    <option value="true" {{ 'selected' if express_filter == 'true' }}>Express Only</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+                <a href="{{ url_for('shipments.list_shipments') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Shipments List -->
+{% if shipments %}
+    <div class="row">
+        {% for shipment in shipments %}
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">{{ shipment.tracking_number }}</h6>
+                    <div>
+                        {% if shipment.is_express %}
+                            <span class="badge bg-warning me-1">
+                                <i class="fas fa-bolt"></i> Express
+                            </span>
+                        {% endif %}
+                        <span class="badge bg-{{ 'success' if shipment.status == 'delivered' else 'warning' if shipment.status in ['picked_up', 'in_transit', 'out_for_delivery'] else 'danger' if shipment.status == 'returned' else 'secondary' }}">
+                            {{ shipment.status.replace('_', ' ').title() }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">From:</small>
+                            <p class="mb-1"><strong>{{ shipment.sender_name }}</strong></p>
+                            <p class="small text-muted">{{ shipment.sender_address[:50] }}{{ '...' if shipment.sender_address|length > 50 else '' }}</p>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">To:</small>
+                            <p class="mb-1"><strong>{{ shipment.recipient_name }}</strong></p>
+                            <p class="small text-muted">{{ shipment.recipient_address[:50] }}{{ '...' if shipment.recipient_address|length > 50 else '' }}</p>
+                        </div>
+                    </div>
+                    <hr>
+                    <p class="card-text">{{ shipment.package_description or 'No description' }}</p>
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">
+                                <i class="fas fa-weight"></i> Weight: {{ shipment.weight or 'N/A' }} kg
+                            </small>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">
+                                <i class="fas fa-dollar-sign"></i> Cost: ${{ "%.2f"|format(shipment.shipping_cost) }}
+                            </small>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block mt-2">
+                        <i class="fas fa-flag"></i> Priority: {{ shipment.priority.title() }} |
+                        <i class="fas fa-calendar"></i> {{ shipment.created_at[:16] }}
+                    </small>
+                </div>
+                <div class="card-footer">
+                    <div class="btn-group w-100" role="group">
+                        <a href="{{ url_for('shipments.edit_shipment', shipment_id=shipment.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <form method="POST" action="{{ url_for('shipments.delete_shipment', shipment_id=shipment.id) }}" class="d-inline" 
+                              onsubmit="return confirm('Are you sure you want to delete this shipment?')">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('shipments.toggle_express', shipment_id=shipment.id) }}" class="d-inline">
+                            <button type="submit" class="btn btn-outline-warning btn-sm">
+                                <i class="fas fa-{{ 'bolt' if not shipment.is_express else 'times' }}"></i> 
+                                {{ 'Express' if not shipment.is_express else 'Standard' }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <nav aria-label="Shipment pagination">
+        <ul class="pagination justify-content-center">
+            {% if current_page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('shipments.list_shipments', page=current_page-1, status=status_filter, priority=priority_filter, express=express_filter) }}">Previous</a>
+                </li>
+            {% endif %}
+            
+            {% for page_num in range(1, total_pages + 1) %}
+                <li class="page-item {{ 'active' if page_num == current_page }}">
+                    <a class="page-link" href="{{ url_for('shipments.list_shipments', page=page_num, status=status_filter, priority=priority_filter, express=express_filter) }}">{{ page_num }}</a>
+                </li>
+            {% endfor %}
+            
+            {% if current_page < total_pages %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('shipments.list_shipments', page=current_page+1, status=status_filter, priority=priority_filter, express=express_filter) }}">Next</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+{% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-shipping-fast fa-3x text-muted mb-3"></i>
+        <h4>No shipments found</h4>
+        <p class="text-muted">Create your first shipment to get started!</p>
+        <a href="{{ url_for('shipments.create_shipment') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create Shipment
+        </a>
+    </div>
+{% endif %}
+{% endblock %}

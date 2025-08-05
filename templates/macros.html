@@ -1,0 +1,37 @@
+{% macro render_status_badge(status) %}
+    <span class="badge {{ get_status_badge_class(status) }}">
+        {{ status.replace('_', ' ').title() }}
+    </span>
+{% endmacro %}
+
+{% macro render_priority_badge(priority) %}
+    <span class="badge {{ get_priority_badge_class(priority) }}">
+        {{ priority.title() }} Priority
+    </span>
+{% endmacro %}
+
+{% macro render_pagination(current_page, total_pages, endpoint, **filters) %}
+    {% if total_pages > 1 %}
+    <nav aria-label="Task pagination">
+        <ul class="pagination justify-content-center">
+            {% if current_page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for(endpoint, page=current_page-1, **filters) }}">Previous</a>
+                </li>
+            {% endif %}
+            
+            {% for page_num in range(1, total_pages + 1) %}
+                <li class="page-item {{ 'active' if page_num == current_page }}">
+                    <a class="page-link" href="{{ url_for(endpoint, page=page_num, **filters) }}">{{ page_num }}</a>
+                </li>
+            {% endfor %}
+            
+            {% if current_page < total_pages %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for(endpoint, page=current_page+1, **filters) }}">Next</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+{% endmacro %}
