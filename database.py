@@ -58,12 +58,12 @@ def init_db():
                   user_id INTEGER,
                   FOREIGN KEY (user_id) REFERENCES users (id))''')
     
-    # Create default user if not exists
-    c.execute("SELECT * FROM users WHERE username = ?", ('admin',))
-    if not c.fetchone():
-        password_hash = generate_password_hash('admin123')
-        c.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", 
-                 ('admin', password_hash))
+    # # Create default user if not exists
+    # c.execute("SELECT * FROM users WHERE username = ?", ('admin',))
+    # if not c.fetchone():
+    #     password_hash = generate_password_hash('admin123')
+    #     c.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", 
+    #              ('admin', password_hash))
     
     conn.commit()
     conn.close()

@@ -16,7 +16,7 @@ def login():
             session['user_id'] = user.id
             session['username'] = user.username
             flash('Login successful!', 'success')
-            return redirect(url_for('tasks.list_tasks'))
+            return redirect(url_for('main.index'))
         else:
             flash('Invalid username or password!', 'error')
     
